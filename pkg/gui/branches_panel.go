@@ -59,21 +59,18 @@ func (gui *Gui) RenderSelectedBranchUpstreamDifferences() error {
 // gui.refreshStatus is called at the end of this because that's when we can
 // be sure there is a state.Branches array to pick the current branch from
 func (gui *Gui) refreshBranches(g *gocui.Gui) error {
-	g.Update(func(g *gocui.Gui) error {
-		builder, err := git.NewBranchListBuilder(gui.Log, gui.GitCommand)
-		if err != nil {
-			return err
-		}
-		gui.State.Branches = builder.Build()
+	builder, err := git.NewBranchListBuilder(gui.Log, gui.GitCommand)
+	if err != nil {
+		return err
+	}
+	gui.State.Branches = builder.Build()
 
-		gui.refreshSelectedLine(&gui.State.Panels.Branches.SelectedLine, len(gui.State.Branches))
-		if err := gui.RenderSelectedBranchUpstreamDifferences(); err != nil {
-			return err
-		}
+	gui.refreshSelectedLine(&gui.State.Panels.Branches.SelectedLine, len(gui.State.Branches))
+	if err := gui.RenderSelectedBranchUpstreamDifferences(); err != nil {
+		return err
+	}
 
-		return gui.refreshStatus(g)
-	})
-	return nil
+	return gui.refreshStatus(g)
 }
 
 func (gui *Gui) handleBranchesNextLine(g *gocui.Gui, v *gocui.View) error {

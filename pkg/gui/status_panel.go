@@ -17,14 +17,14 @@ func (gui *Gui) refreshStatus(g *gocui.Gui) error {
 	// for some reason if this isn't wrapped in an update the clear seems to
 	// be applied after the other things or something like that; the panel's
 	// contents end up cleared
+	pushables, pullables := gui.GitCommand.GetCurrentBranchUpstreamDifferenceCount()
+	if err := gui.updateWorkTreeState(); err != nil {
+		return err
+	}
 	g.Update(func(*gocui.Gui) error {
 		v.Clear()
-		pushables, pullables := gui.GitCommand.GetCurrentBranchUpstreamDifferenceCount()
 		fmt.Fprint(v, "↑"+pushables+"↓"+pullables)
 		branches := gui.State.Branches
-		if err := gui.updateWorkTreeState(); err != nil {
-			return err
-		}
 		if gui.State.WorkingTreeState != "normal" {
 			fmt.Fprint(v, utils.ColoredString(fmt.Sprintf(" (%s)", gui.State.WorkingTreeState), color.FgYellow))
 		}

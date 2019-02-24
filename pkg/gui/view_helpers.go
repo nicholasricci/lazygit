@@ -13,16 +13,26 @@ import (
 var cyclableViews = []string{"status", "files", "branches", "commits", "stash"}
 
 func (gui *Gui) refreshSidePanels(g *gocui.Gui) error {
-	if err := gui.refreshBranches(g); err != nil {
-		return err
-	}
-	if err := gui.refreshFiles(); err != nil {
-		return err
-	}
-	if err := gui.refreshCommits(g); err != nil {
-		return err
-	}
-	return gui.refreshStashEntries(g)
+	go func() {
+		gui.refreshFiles()
+	}()
+
+	go func() {
+		gui.refreshBranches(g)
+	}()
+
+	go func() {
+		gui.refreshCommits(g)
+	}()
+
+	go func() {
+		gui.refreshStatus(g)
+	}()
+
+	go func() {
+		gui.refreshStashEntries(g)
+	}()
+	return nil
 }
 
 func (gui *Gui) nextView(g *gocui.Gui, v *gocui.View) error {

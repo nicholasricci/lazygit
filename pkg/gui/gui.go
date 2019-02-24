@@ -73,6 +73,7 @@ type Gui struct {
 	statusManager *statusManager
 	credentials   credentials
 	waitForIntro  sync.WaitGroup
+	errorChan     chan (error)
 }
 
 // for now the staging panel state, unlike the other panel states, is going to be
@@ -170,6 +171,7 @@ func NewGui(log *logrus.Entry, gitCommand *commands.GitCommand, oSCommand *comma
 		Tr:            tr,
 		Updater:       updater,
 		statusManager: &statusManager{},
+		errorChan:     make(chan error, 10),
 	}
 
 	gui.GenerateSentinelErrors()
@@ -535,6 +537,20 @@ func (gui *Gui) Run() error {
 	defer g.Close()
 
 	gui.g = g // TODO: always use gui.g rather than passing g around everywhere
+
+	go func() {
+		for {
+			select {
+			case err := <-gui.errorChan:
+				if err == nil {
+					continue
+				}
+				gui.g.Update(func(g *gocui.Gui) error {
+					return err
+				})
+			}
+		}
+	}()
 
 	if err := gui.SetColorScheme(); err != nil {
 		return err

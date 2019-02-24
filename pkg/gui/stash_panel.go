@@ -36,11 +36,11 @@ func (gui *Gui) handleStashEntrySelect(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) refreshStashEntries(g *gocui.Gui) error {
+	gui.State.StashEntries = gui.GitCommand.GetStashEntries()
+
+	gui.refreshSelectedLine(&gui.State.Panels.Stash.SelectedLine, len(gui.State.StashEntries))
+
 	g.Update(func(g *gocui.Gui) error {
-		gui.State.StashEntries = gui.GitCommand.GetStashEntries()
-
-		gui.refreshSelectedLine(&gui.State.Panels.Stash.SelectedLine, len(gui.State.StashEntries))
-
 		isFocused := gui.g.CurrentView().Name() == "stash"
 		list, err := utils.RenderList(gui.State.StashEntries, isFocused)
 		if err != nil {

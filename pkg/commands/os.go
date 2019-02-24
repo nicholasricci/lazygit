@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-errors/errors"
 
@@ -52,12 +53,16 @@ func NewOSCommand(log *logrus.Entry, config config.AppConfigurer) *OSCommand {
 
 // RunCommandWithOutput wrapper around commands returning their output and error
 func (c *OSCommand) RunCommandWithOutput(command string) (string, error) {
+	t := time.Now()
+
 	c.Log.WithField("command", command).Info("RunCommand")
 	splitCmd := str.ToArgv(command)
 	c.Log.Info(splitCmd)
-	return sanitisedCommandOutput(
+	str, err := sanitisedCommandOutput(
 		c.command(splitCmd[0], splitCmd[1:]...).CombinedOutput(),
 	)
+	c.Log.Warn(command, time.Since(t))
+	return str, err
 }
 
 // RunCommandWithOutputLive runs RunCommandWithOutputLiveWrapper

@@ -40,17 +40,17 @@ func (gui *Gui) handleCommitSelect(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) refreshCommits(g *gocui.Gui) error {
-	g.Update(func(*gocui.Gui) error {
-		builder, err := git.NewCommitListBuilder(gui.Log, gui.GitCommand, gui.OSCommand, gui.Tr, gui.State.CherryPickedCommits)
-		if err != nil {
-			return err
-		}
-		commits, err := builder.GetCommits()
-		if err != nil {
-			return err
-		}
-		gui.State.Commits = commits
+	builder, err := git.NewCommitListBuilder(gui.Log, gui.GitCommand, gui.OSCommand, gui.Tr, gui.State.CherryPickedCommits)
+	if err != nil {
+		return err
+	}
+	commits, err := builder.GetCommits()
+	if err != nil {
+		return err
+	}
+	gui.State.Commits = commits
 
+	g.Update(func(*gocui.Gui) error {
 		gui.refreshSelectedLine(&gui.State.Panels.Commits.SelectedLine, len(gui.State.Commits))
 
 		isFocused := gui.g.CurrentView().Name() == "commits"
