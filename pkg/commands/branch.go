@@ -18,10 +18,10 @@ type Branch struct {
 	Selected  bool
 }
 
-// GetDisplayStrings returns the dispaly string of branch
-func (b *Branch) GetDisplayStrings() []string {
+// GetDisplayStrings returns the display string of branch
+func (b *Branch) GetDisplayStrings(isFocused bool) []string {
 	displayName := utils.ColoredString(b.Name, b.GetColor())
-	if b.Selected && b.Pushables != "" && b.Pullables != "" {
+	if isFocused && b.Selected && b.Pushables != "" && b.Pullables != "" {
 		displayName = fmt.Sprintf("%s ↑%s↓%s", displayName, b.Pushables, b.Pullables)
 	}
 

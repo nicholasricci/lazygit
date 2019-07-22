@@ -20,11 +20,18 @@ func (gui *Gui) getSelectedStashEntry(v *gocui.View) *commands.StashEntry {
 }
 
 func (gui *Gui) handleStashEntrySelect(g *gocui.Gui, v *gocui.View) error {
+	if gui.popupPanelFocused() {
+		return nil
+	}
+
+	if _, err := gui.g.SetCurrentView(v.Name()); err != nil {
+		return err
+	}
 	stashEntry := gui.getSelectedStashEntry(v)
 	if stashEntry == nil {
 		return gui.renderString(g, "main", gui.Tr.SLocalize("NoStashEntries"))
 	}
-	if err := gui.focusPoint(0, gui.State.Panels.Stash.SelectedLine, v); err != nil {
+	if err := gui.focusPoint(0, gui.State.Panels.Stash.SelectedLine, len(gui.State.StashEntries), v); err != nil {
 		return err
 	}
 	go func() {
@@ -41,31 +48,49 @@ func (gui *Gui) refreshStashEntries(g *gocui.Gui) error {
 
 		gui.refreshSelectedLine(&gui.State.Panels.Stash.SelectedLine, len(gui.State.StashEntries))
 
-		list, err := utils.RenderList(gui.State.StashEntries)
+		isFocused := gui.g.CurrentView().Name() == "stash"
+		list, err := utils.RenderList(gui.State.StashEntries, isFocused)
 		if err != nil {
 			return err
 		}
 
-		v := gui.getStashView(gui.g)
+		v := gui.getStashView()
 		v.Clear()
 		fmt.Fprint(v, list)
 
-		return gui.resetOrigin(v)
+		if err := gui.resetOrigin(v); err != nil {
+			return err
+		}
+		return nil
 	})
 	return nil
 }
 
 func (gui *Gui) handleStashNextLine(g *gocui.Gui, v *gocui.View) error {
+	if gui.popupPanelFocused() {
+		return nil
+	}
+
 	panelState := gui.State.Panels.Stash
 	gui.changeSelectedLine(&panelState.SelectedLine, len(gui.State.StashEntries), false)
 
+	if err := gui.resetOrigin(gui.getMainView()); err != nil {
+		return err
+	}
 	return gui.handleStashEntrySelect(gui.g, v)
 }
 
 func (gui *Gui) handleStashPrevLine(g *gocui.Gui, v *gocui.View) error {
+	if gui.popupPanelFocused() {
+		return nil
+	}
+
 	panelState := gui.State.Panels.Stash
 	gui.changeSelectedLine(&panelState.SelectedLine, len(gui.State.StashEntries), true)
 
+	if err := gui.resetOrigin(gui.getMainView()); err != nil {
+		return err
+	}
 	return gui.handleStashEntrySelect(gui.g, v)
 }
 
@@ -102,19 +127,18 @@ func (gui *Gui) stashDo(g *gocui.Gui, v *gocui.View, method string) error {
 		gui.createErrorPanel(g, err.Error())
 	}
 	gui.refreshStashEntries(g)
-	return gui.refreshFiles(g)
+	return gui.refreshFiles()
 }
 
-func (gui *Gui) handleStashSave(g *gocui.Gui, filesView *gocui.View) error {
+func (gui *Gui) handleStashSave(stashFunc func(message string) error) error {
 	if len(gui.trackedFiles()) == 0 && len(gui.stagedFiles()) == 0 {
-		return gui.createErrorPanel(g, gui.Tr.SLocalize("NoTrackedStagedFilesStash"))
+		return gui.createErrorPanel(gui.g, gui.Tr.SLocalize("NoTrackedStagedFilesStash"))
 	}
-	gui.createPromptPanel(g, filesView, gui.Tr.SLocalize("StashChanges"), func(g *gocui.Gui, v *gocui.View) error {
-		if err := gui.GitCommand.StashSave(gui.trimmedContent(v)); err != nil {
+	return gui.createPromptPanel(gui.g, gui.getFilesView(), gui.Tr.SLocalize("StashChanges"), func(g *gocui.Gui, v *gocui.View) error {
+		if err := stashFunc(gui.trimmedContent(v)); err != nil {
 			gui.createErrorPanel(g, err.Error())
 		}
 		gui.refreshStashEntries(g)
-		return gui.refreshFiles(g)
+		return gui.refreshFiles()
 	})
-	return nil
 }

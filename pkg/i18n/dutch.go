@@ -17,6 +17,9 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "DiffTitle",
 			Other: "Diff",
 		}, &i18n.Message{
+			ID:    "LogTitle",
+			Other: "Log",
+		}, &i18n.Message{
 			ID:    "FilesTitle",
 			Other: "Bestanden",
 		}, &i18n.Message{
@@ -26,8 +29,20 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "CommitsTitle",
 			Other: "Commits",
 		}, &i18n.Message{
+			ID:    "CommitsDiffTitle",
+			Other: "Commits (specific diff mode)",
+		}, &i18n.Message{
+			ID:    "CommitsDiff",
+			Other: "select commit to diff with another commit",
+		}, &i18n.Message{
 			ID:    "StashTitle",
 			Other: "Stash",
+		}, &i18n.Message{
+			ID:    "StagingMainTitle",
+			Other: `Stage Lines/Hunks`,
+		}, &i18n.Message{
+			ID:    "MergingMainTitle",
+			Other: "Resolve merge conflicts",
 		}, &i18n.Message{
 			ID:    "CommitMessage",
 			Other: "Commit bericht",
@@ -70,9 +85,6 @@ func addDutch(i18nObject *i18n.Bundle) error {
 		}, &i18n.Message{
 			ID:    "execute",
 			Other: "uitvoeren",
-		}, &i18n.Message{
-			ID:    "stashFiles",
-			Other: "stash-bestanden",
 		}, &i18n.Message{
 			ID:    "open",
 			Other: "open",
@@ -149,9 +161,6 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "FileNoMergeCons",
 			Other: "Dit bestand heeft geen merge conflicten",
 		}, &i18n.Message{
-			ID:    "SureResetHardHead",
-			Other: "Weet je het zeker dat je `reset --hard HEAD` en `clean -fd` wil uitvoeren? Het kan dat je hierdoor bestanden verliest",
-		}, &i18n.Message{
 			ID:    "SureTo",
 			Other: "Weet je het zeker dat je {{.fileName}} wilt {{.deleteVerb}} (je veranderingen zullen worden verwijderd)",
 		}, &i18n.Message{
@@ -181,6 +190,9 @@ func addDutch(i18nObject *i18n.Bundle) error {
 		}, &i18n.Message{
 			ID:    "ForceDeleteBranchMessage",
 			Other: "Weet je zeker dat je branch {{.selectedBranchName}} geforceerd wil verwijderen?",
+		}, &i18n.Message{
+			ID:    "rebaseBranch",
+			Other: "rebase branch",
 		}, &i18n.Message{
 			ID:    "CantMergeBranchIntoItself",
 			Other: "Je kan niet een branch in zichzelf mergen",
@@ -266,9 +278,6 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "PotentialErrInGetselectedCommit",
 			Other: "Er is mogelijk een error in getSelected Commit (geen match tussen ui en state)",
 		}, &i18n.Message{
-			ID:    "NoCommitsThisBranch",
-			Other: "Geen commits voor deze branch",
-		}, &i18n.Message{
 			ID:    "Error",
 			Other: "Foutmelding",
 		}, &i18n.Message{
@@ -326,20 +335,11 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "NoViewMachingNewLineFocusedSwitchStatement",
 			Other: "Er machen geen weergave met de newLineFocused switch declaratie",
 		}, &i18n.Message{
-			ID:    "settingPreviewsViewTo",
-			Other: "vorige weergave instellen op: {{.oldViewName}}",
-		}, &i18n.Message{
 			ID:    "newFocusedViewIs",
 			Other: "nieuw gefocussed weergave is {{.newFocusedView}}",
 		}, &i18n.Message{
 			ID:    "CantCloseConfirmationPrompt",
 			Other: "Kon de bevestiging prompt niet sluiten: {{.error}}",
-		}, &i18n.Message{
-			ID:    "NoChangedFiles",
-			Other: "Geen veranderde files",
-		}, &i18n.Message{
-			ID:    "ClearFilePanel",
-			Other: "maak bestandsvenster leeg",
 		}, &i18n.Message{
 			ID:    "MergeAborted",
 			Other: "Merge afgebroken",
@@ -380,9 +380,6 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			ID:    "GitconfigParseErr",
 			Other: `Gogit kon je gitconfig bestand niet goed parsen door de aanwezigheid van losstaande '\' tekens. Het weghalen van deze tekens zou het probleem moeten oplossen. `,
 		}, &i18n.Message{
-			ID:    "removeFile",
-			Other: `Verwijder als untracked / uitchecken wordt gevolgd (ga weg)`,
-		}, &i18n.Message{
 			ID:    "editFile",
 			Other: `verander bestand`,
 		}, &i18n.Message{
@@ -394,9 +391,6 @@ func addDutch(i18nObject *i18n.Bundle) error {
 		}, &i18n.Message{
 			ID:    "refreshFiles",
 			Other: `refresh bestanden`,
-		}, &i18n.Message{
-			ID:    "resetHard",
-			Other: `harde reset and verwijderen ongevolgde bestanden`,
 		}, &i18n.Message{
 			ID:    "mergeIntoCurrentBranch",
 			Other: `merge in met huidige checked out branch`,
@@ -420,7 +414,7 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			Other: `fetch`,
 		}, &i18n.Message{
 			ID:    "NoAutomaticGitFetchTitle",
-			Other: `Geen automatiese git fetch`,
+			Other: `Geen automatische git fetch`,
 		}, &i18n.Message{
 			ID:    "NoAutomaticGitFetchBody",
 			Other: `Lazygit kan niet "git fetch" uitvoeren in een privé repository, gebruik f in het branches paneel om "git fetch" manueel uit te voeren`,
@@ -432,7 +426,7 @@ func addDutch(i18nObject *i18n.Bundle) error {
 			Other: `Kan alleen individuele lijnen stagen van getrackte bestanden met onstaged veranderingen`,
 		}, &i18n.Message{
 			ID:    "StagingTitle",
-			Other: `Staging`,
+			Other: `Stage Lines/Hunks`,
 		}, &i18n.Message{
 			ID:    "StageHunk",
 			Other: `stage hunk`,
@@ -448,6 +442,315 @@ func addDutch(i18nObject *i18n.Bundle) error {
 		}, &i18n.Message{
 			ID:    "CantFindHunk",
 			Other: `Kan geen hunk vinden`,
+		}, &i18n.Message{
+			ID:    "RebasingTitle",
+			Other: "Rebasing",
+		}, &i18n.Message{
+			ID:    "MergingTitle",
+			Other: "Merging",
+		}, &i18n.Message{
+			ID:    "ConfirmRebase",
+			Other: "Weet je zeker dat je {{.checkedOutBranch}} op {{.selectedBranch}} wil rebasen?",
+		}, &i18n.Message{
+			ID:    "ConfirmMerge",
+			Other: "Weet je zeker dat je {{.selectedBranch}} in {{.checkedOutBranch}} wil mergen?",
+		}, &i18n.Message{
+			ID:    "FwdNoUpstream",
+			Other: "Kan niet de branch vooruitspoelen zonder upstream",
+		}, &i18n.Message{
+			ID:    "ErrorOccurred",
+			Other: "Er is iets fout gegaan! Zou je hier een issue aan willen maken: https://github.com/jesseduffield/lazygit/issues",
+		}, &i18n.Message{
+			ID:    "FwdCommitsToPush",
+			Other: "Je kan niet vooruitspoelen als de branch geen nieuwe commits heeft",
+		}, &i18n.Message{
+			ID:    "MainTitle",
+			Other: "Hoofd",
+		}, &i18n.Message{
+			ID:    "NormalTitle",
+			Other: "Normaal",
+		}, &i18n.Message{
+			ID:    "softReset",
+			Other: "zacht reset",
+		}, &i18n.Message{
+			ID:    "CantRebaseOntoSelf",
+			Other: "Je kan niet een branch rebasen op zichzelf",
+		}, &i18n.Message{
+			ID:    "SureSquashThisCommit",
+			Other: "Weet je zeker dat je deze commit wil samenvoegen met de commit hieronder?",
+		}, &i18n.Message{
+			ID:    "Squash",
+			Other: "Squash",
+		}, &i18n.Message{
+			ID:    "pickCommit",
+			Other: "pick commit (when mid-rebase)",
+		}, &i18n.Message{
+			ID:    "revertCommit",
+			Other: "commit omgedaan maken",
+		}, &i18n.Message{
+			ID:    "deleteCommit",
+			Other: "verwijder commit",
+		}, &i18n.Message{
+			ID:    "moveDownCommit",
+			Other: "verplaats commit 1 omlaag",
+		}, &i18n.Message{
+			ID:    "moveUpCommit",
+			Other: "verplaats commit 1 omhoog",
+		}, &i18n.Message{
+			ID:    "editCommit",
+			Other: "verander commit",
+		}, &i18n.Message{
+			ID:    "amendToCommit",
+			Other: "wijzig commit met staged veranderingen",
+		}, &i18n.Message{
+			ID:    "FoundConflicts",
+			Other: "Conflicten!, Om af te breken druk 'esc', anders druk op 'enter'",
+		}, &i18n.Message{
+			ID:    "FoundConflictsTitle",
+			Other: "Auto-merge mislukt",
+		}, &i18n.Message{
+			ID:    "Undo",
+			Other: "ongedaan maken",
+		}, &i18n.Message{
+			ID:    "PickHunk",
+			Other: "pick hunk",
+		}, &i18n.Message{
+			ID:    "PickBothHunks",
+			Other: "pick beide hunks",
+		}, &i18n.Message{
+			ID:    "ViewMergeRebaseOptions",
+			Other: "bekijk merge/rebase opties",
+		}, &i18n.Message{
+			ID:    "NotMergingOrRebasing",
+			Other: "Je bent momenteel niet aan het rebasen of mergen",
+		}, &i18n.Message{
+			ID:    "RecentRepos",
+			Other: "recent repositories",
+		}, &i18n.Message{
+			ID:    "MergeOptionsTitle",
+			Other: "Merge Opties",
+		}, &i18n.Message{
+			ID:    "RebaseOptionsTitle",
+			Other: "Rebase Opties",
+		}, &i18n.Message{
+			ID:    "ConflictsResolved",
+			Other: "alle merge conflicten zijn opgelost. Wilt je verder gaan?",
+		}, &i18n.Message{
+			ID:    "NoRoom",
+			Other: "Niet genoeg ruimte",
+		}, &i18n.Message{
+			ID:    "YouAreHere",
+			Other: "JE BENT HIER",
+		}, &i18n.Message{
+			ID:    "rewordNotSupported",
+			Other: "herformatteren van commits in interactief rebasen is nog niet ondersteund",
+		}, &i18n.Message{
+			ID:    "cherryPickCopy",
+			Other: "kopiëer commit (cherry-pick)",
+		}, &i18n.Message{
+			ID:    "cherryPickCopyRange",
+			Other: "kopiëer commit reeks (cherry-pick)",
+		}, &i18n.Message{
+			ID:    "pasteCommits",
+			Other: "plak commits (cherry-pick)",
+		}, &i18n.Message{
+			ID:    "SureCherryPick",
+			Other: "Weet je zeker dat je de gekopieerde commits naar deze branch wil cherry-picken?",
+		}, &i18n.Message{
+			ID:    "CherryPick",
+			Other: "Cherry-Pick",
+		}, &i18n.Message{
+			ID:    "CannotRebaseOntoFirstCommit",
+			Other: "Je kan niet interactief rebasen naar de eerste commit",
+		}, &i18n.Message{
+			ID:    "CannotSquashOntoSecondCommit",
+			Other: "Je kan niet een squash/fixup doen naar de 2de commit",
+		}, &i18n.Message{
+			ID:    "Donate",
+			Other: "Doneer",
+		}, &i18n.Message{
+			ID:    "PrevLine",
+			Other: "selecteer de vorige lijn",
+		}, &i18n.Message{
+			ID:    "NextLine",
+			Other: "selecteer de volgende lijn",
+		}, &i18n.Message{
+			ID:    "PrevHunk",
+			Other: "selecteer de vorige hunk",
+		}, &i18n.Message{
+			ID:    "NextHunk",
+			Other: "selecteer de volgende hunk",
+		}, &i18n.Message{
+			ID:    "PrevConflict",
+			Other: "selecteer voorgaand conflict",
+		}, &i18n.Message{
+			ID:    "NextConflict",
+			Other: "selecteer volgende conflict",
+		}, &i18n.Message{
+			ID:    "SelectTop",
+			Other: "selecteer bovenste hunk",
+		}, &i18n.Message{
+			ID:    "SelectBottom",
+			Other: "selecteer onderste hunk",
+		}, &i18n.Message{
+			ID:    "ScrollDown",
+			Other: "scroll omlaag",
+		}, &i18n.Message{
+			ID:    "ScrollUp",
+			Other: "scroll omhoog",
+		}, &i18n.Message{
+			ID:    "AmendCommitTitle",
+			Other: "Commit wijzigen",
+		}, &i18n.Message{
+			ID:    "AmendCommitPrompt",
+			Other: "Weet je zeker dat je deze commit wil wijzigen met de vorige staged bestanden?",
+		}, &i18n.Message{
+			ID:    "DeleteCommitTitle",
+			Other: "Verwijder Commit",
+		}, &i18n.Message{
+			ID:    "DeleteCommitPrompt",
+			Other: "Weet je zeker dat je deze commit wil verwijderen?",
+		}, &i18n.Message{
+			ID:    "SquashingStatus",
+			Other: "squashing",
+		}, &i18n.Message{
+			ID:    "FixingStatus",
+			Other: "fixing up",
+		}, &i18n.Message{
+			ID:    "DeletingStatus",
+			Other: "verwijderen",
+		}, &i18n.Message{
+			ID:    "MovingStatus",
+			Other: "verplaatsen",
+		}, &i18n.Message{
+			ID:    "RebasingStatus",
+			Other: "rebasing",
+		}, &i18n.Message{
+			ID:    "AmendingStatus",
+			Other: "wijzigen",
+		}, &i18n.Message{
+			ID:    "CherryPickingStatus",
+			Other: "cherry-picking",
+		}, &i18n.Message{
+			ID:    "CommitFiles",
+			Other: "Commit bestanden",
+		}, &i18n.Message{
+			ID:    "viewCommitFiles",
+			Other: "bekijk gecommite bestanden",
+		}, &i18n.Message{
+			ID:    "CommitFilesTitle",
+			Other: "Commit bestanden",
+		}, &i18n.Message{
+			ID:    "goBack",
+			Other: "ga terug",
+		}, &i18n.Message{
+			ID:    "NoCommiteFiles",
+			Other: "Geen bestanden voor deze commit",
+		}, &i18n.Message{
+			ID:    "checkoutCommitFile",
+			Other: "bestand uitchecken",
+		}, &i18n.Message{
+			ID:    "discardOldFileChange",
+			Other: "uitsluit deze commit zijn veranderingen aan dit bestand",
+		}, &i18n.Message{
+			ID:    "DiscardFileChangesTitle",
+			Other: "uitsluit bestand zijn veranderingen",
+		}, &i18n.Message{
+			ID:    "DiscardFileChangesPrompt",
+			Other: "Weet je zeker dat je de wijzigingen van deze commit in dit bestand wilt weggooien? Als dit bestand is gecreëerd in deze commit dan zal dit bestand worden verwijdert",
+		}, &i18n.Message{
+			ID:    "DisabledForGPG",
+			Other: "Onderdelen niet beschikbaar voor gebruikers die GPG gebruiken",
+		}, &i18n.Message{
+			ID:    "CreateRepo",
+			Other: "Niet in een git repository. Creëer een nieuwe git repository? (y/n): ",
+		}, &i18n.Message{
+			ID:    "AutoStashTitle",
+			Other: "Autostash?",
+		}, &i18n.Message{
+			ID:    "AutoStashPrompt",
+			Other: "Je moet je veranderingen stashen en poppen om ze over te bregen. Dit automatisch doen? (enter/esc)",
+		}, &i18n.Message{
+			ID:    "StashPrefix",
+			Other: "Auto-stashing veranderingen voor ",
+		}, &i18n.Message{
+			ID:    "viewDiscardOptions",
+			Other: "bekijk 'veranderingen ongedaan maken' opties",
+		}, &i18n.Message{
+			ID:    "cancel",
+			Other: "anuleren",
+		}, &i18n.Message{
+			ID:    "discardAllChanges",
+			Other: "negeer alle wijzigingen",
+		}, &i18n.Message{
+			ID:    "discardUnstagedChanges",
+			Other: "negeer unstaged wijzigingen",
+		}, &i18n.Message{
+			ID:    "discardAllChangesToAllFiles",
+			Other: "verwijder werkende tree",
+		}, &i18n.Message{
+			ID:    "discardAnyUnstagedChanges",
+			Other: "discard unstaged changes",
+		}, &i18n.Message{
+			ID:    "discardUntrackedFiles",
+			Other: "negeer niet-gevonden bestanden",
+		}, &i18n.Message{
+			ID:    "viewResetOptions",
+			Other: `bekijk reset opties`,
+		}, &i18n.Message{
+			ID:    "hardReset",
+			Other: "harde reset",
+		}, &i18n.Message{
+			ID:    "createFixupCommit",
+			Other: `creëer fixup commit voor deze commit`,
+		}, &i18n.Message{
+			ID:    "squashAboveCommits",
+			Other: `squash bovenstaande commits`,
+		}, &i18n.Message{
+			ID:    "SquashAboveCommits",
+			Other: `Squash bovenstaande commits`,
+		}, &i18n.Message{
+			ID:    "SureSquashAboveCommits",
+			Other: `Weet je zeker dat je alles wil squash/fixup! voor de bovenstaand commits {{.commit}}?`,
+		}, &i18n.Message{
+			ID:    "CreateFixupCommit",
+			Other: `Creëer fixup commit`,
+		}, &i18n.Message{
+			ID:    "SureCreateFixupCommit",
+			Other: `Weet je zeker dat je een fixup wil maken! commit voor commit {{.commit}}?`,
+		}, &i18n.Message{
+			ID:    "executeCustomCommand",
+			Other: "voor aangepast commando uit",
+		}, &i18n.Message{
+			ID:    "CustomCommand",
+			Other: "Aangepast commando:",
+		}, &i18n.Message{
+			ID:    "commitChangesWithoutHook",
+			Other: "commit veranderingen zonder pre-commit hook",
+		}, &i18n.Message{
+			ID:    "SkipHookPrefixNotConfigured",
+			Other: "Je hebt nog niet een commit bericht voorvoegsel ingesteld voor het overslaan van hooks. Set `git.skipHookPrefix = 'WIP'` in je config",
+		}, &i18n.Message{
+			ID:    "resetTo",
+			Other: `reset to`,
+		}, &i18n.Message{
+			ID:    "pressEnterToReturn",
+			Other: "Press enter to return to lazygit",
+		}, &i18n.Message{
+			ID:    "viewStashOptions",
+			Other: "view stash options",
+		}, &i18n.Message{
+			ID:    "stashAllChanges",
+			Other: "stash-bestanden",
+		}, &i18n.Message{
+			ID:    "stashStagedChanges",
+			Other: "stash staged changes",
+		}, &i18n.Message{
+			ID:    "stashOptions",
+			Other: "Stash options",
+		}, &i18n.Message{
+			ID:    "notARepository",
+			Other: "Error: must be run inside a git repository",
 		},
 	)
 }

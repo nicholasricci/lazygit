@@ -13,10 +13,11 @@ type Binding struct {
 	Key         interface{} // FIXME: find out how to get `gocui.Key | rune`
 	Modifier    gocui.Modifier
 	Description string
+	Alternative string
 }
 
 // GetDisplayStrings returns the display string of a file
-func (b *Binding) GetDisplayStrings() []string {
+func (b *Binding) GetDisplayStrings(isFocused bool) []string {
 	return []string{b.GetKey(), b.Description}
 }
 
@@ -28,6 +29,12 @@ func (b *Binding) GetKey() string {
 	case rune:
 		key = int(b.Key.(rune))
 	case gocui.Key:
+		if b.Key.(gocui.Key) == gocui.KeyCtrlJ {
+			return "ctrl+j"
+		}
+		if b.Key.(gocui.Key) == gocui.KeyCtrlK {
+			return "ctrl+k"
+		}
 		key = int(b.Key.(gocui.Key))
 	}
 
@@ -39,13 +46,25 @@ func (b *Binding) GetKey() string {
 		return "enter"
 	case 32:
 		return "space"
+	case 65514:
+		return "►"
+	case 65515:
+		return "◄"
+	case 65517:
+		return "▲"
+	case 65516:
+		return "▼"
+	case 65508:
+		return "PgUp"
+	case 65507:
+		return "PgDn"
 	}
 
 	return string(key)
 }
 
-// GetKeybindings is a function.
-func (gui *Gui) GetKeybindings() []*Binding {
+// GetInitialKeybindings is a function.
+func (gui *Gui) GetInitialKeybindings() []*Binding {
 	bindings := []*Binding{
 		{
 			ViewName: "",
@@ -63,13 +82,25 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Modifier: gocui.ModNone,
 			Handler:  gui.quit,
 		}, {
+			ViewName:    "",
+			Key:         gocui.KeyPgup,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.scrollUpMain,
+			Alternative: "fn+up",
+		}, {
+			ViewName:    "",
+			Key:         gocui.KeyPgdn,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.scrollDownMain,
+			Alternative: "fn+down",
+		}, {
 			ViewName: "",
-			Key:      gocui.KeyPgup,
+			Key:      'K',
 			Modifier: gocui.ModNone,
 			Handler:  gui.scrollUpMain,
 		}, {
 			ViewName: "",
-			Key:      gocui.KeyPgdn,
+			Key:      'J',
 			Modifier: gocui.ModNone,
 			Handler:  gui.scrollDownMain,
 		}, {
@@ -82,6 +113,12 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Key:      gocui.KeyCtrlD,
 			Modifier: gocui.ModNone,
 			Handler:  gui.scrollDownMain,
+		}, {
+			ViewName:    "",
+			Key:         'm',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCreateRebaseOptionsMenu,
+			Description: gui.Tr.SLocalize("ViewMergeRebaseOptions"),
 		}, {
 			ViewName:    "",
 			Key:         'P',
@@ -136,6 +173,13 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleCommitPress,
 			Description: gui.Tr.SLocalize("CommitChanges"),
+		},
+		{
+			ViewName:    "files",
+			Key:         'w',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleWIPCommitPress,
+			Description: gui.Tr.SLocalize("commitChangesWithoutHook"),
 		}, {
 			ViewName:    "files",
 			Key:         'A',
@@ -158,14 +202,8 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			ViewName:    "files",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleFileRemove,
-			Description: gui.Tr.SLocalize("removeFile"),
-		}, {
-			ViewName:    "files",
-			Key:         'm',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSwitchToMerge,
-			Description: gui.Tr.SLocalize("resolveMergeConflicts"),
+			Handler:     gui.handleCreateDiscardMenu,
+			Description: gui.Tr.SLocalize("viewDiscardOptions"),
 		}, {
 			ViewName:    "files",
 			Key:         'e',
@@ -192,16 +230,16 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Description: gui.Tr.SLocalize("refreshFiles"),
 		}, {
 			ViewName:    "files",
-			Key:         'S',
+			Key:         's',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleStashSave,
-			Description: gui.Tr.SLocalize("stashFiles"),
+			Handler:     gui.handleStashChanges,
+			Description: gui.Tr.SLocalize("stashAllChanges"),
 		}, {
 			ViewName:    "files",
-			Key:         'M',
+			Key:         'S',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleAbortMerge,
-			Description: gui.Tr.SLocalize("abortMerge"),
+			Handler:     gui.handleCreateStashMenu,
+			Description: gui.Tr.SLocalize("viewStashOptions"),
 		}, {
 			ViewName:    "files",
 			Key:         'a',
@@ -218,13 +256,13 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			ViewName:    "files",
 			Key:         'D',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleResetAndClean,
-			Description: gui.Tr.SLocalize("resetHard"),
+			Handler:     gui.handleCreateResetMenu,
+			Description: gui.Tr.SLocalize("viewResetOptions"),
 		}, {
 			ViewName:    "files",
 			Key:         gocui.KeyEnter,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSwitchToStagingPanel,
+			Handler:     gui.handleEnterFile,
 			Description: gui.Tr.SLocalize("StageLines"),
 		}, {
 			ViewName:    "files",
@@ -233,65 +271,11 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Handler:     gui.handleGitFetch,
 			Description: gui.Tr.SLocalize("fetch"),
 		}, {
-			ViewName: "main",
-			Key:      gocui.KeyEsc,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleEscapeMerge,
-		}, {
-			ViewName: "main",
-			Key:      gocui.KeySpace,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handlePickHunk,
-		}, {
-			ViewName: "main",
-			Key:      'b',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handlePickBothHunks,
-		}, {
-			ViewName: "main",
-			Key:      gocui.KeyArrowLeft,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectPrevConflict,
-		}, {
-			ViewName: "main",
-			Key:      gocui.KeyArrowRight,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectNextConflict,
-		}, {
-			ViewName: "main",
-			Key:      gocui.KeyArrowUp,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectTop,
-		}, {
-			ViewName: "main",
-			Key:      gocui.KeyArrowDown,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectBottom,
-		}, {
-			ViewName: "main",
-			Key:      'h',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectPrevConflict,
-		}, {
-			ViewName: "main",
-			Key:      'l',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectNextConflict,
-		}, {
-			ViewName: "main",
-			Key:      'k',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectTop,
-		}, {
-			ViewName: "main",
-			Key:      'j',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleSelectBottom,
-		}, {
-			ViewName: "main",
-			Key:      'z',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handlePopFileSnapshot,
+			ViewName:    "files",
+			Key:         'X',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCustomCommand,
+			Description: gui.Tr.SLocalize("executeCustomCommand"),
 		}, {
 			ViewName:    "branches",
 			Key:         gocui.KeySpace,
@@ -330,7 +314,13 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Description: gui.Tr.SLocalize("deleteBranch"),
 		}, {
 			ViewName:    "branches",
-			Key:         'm',
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleRebase,
+			Description: gui.Tr.SLocalize("rebaseBranch"),
+		}, {
+			ViewName:    "branches",
+			Key:         'M',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleMerge,
 			Description: gui.Tr.SLocalize("mergeIntoCurrentBranch"),
@@ -362,7 +352,7 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			ViewName:    "commits",
 			Key:         'g',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleResetToCommit,
+			Handler:     gui.handleCreateCommitResetMenu,
 			Description: gui.Tr.SLocalize("resetToThisCommit"),
 		}, {
 			ViewName:    "commits",
@@ -370,6 +360,90 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleCommitFixup,
 			Description: gui.Tr.SLocalize("fixupCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'F',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCreateFixupCommit,
+			Description: gui.Tr.SLocalize("createFixupCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'S',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSquashAllAboveFixupCommits,
+			Description: gui.Tr.SLocalize("squashAboveCommits"),
+		}, {
+			ViewName:    "commits",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitDelete,
+			Description: gui.Tr.SLocalize("deleteCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         gocui.KeyCtrlJ,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitMoveDown,
+			Description: gui.Tr.SLocalize("moveDownCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         gocui.KeyCtrlK,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitMoveUp,
+			Description: gui.Tr.SLocalize("moveUpCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'e',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitEdit,
+			Description: gui.Tr.SLocalize("editCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'A',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitAmendTo,
+			Description: gui.Tr.SLocalize("amendToCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'p',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitPick,
+			Description: gui.Tr.SLocalize("pickCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         't',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommitRevert,
+			Description: gui.Tr.SLocalize("revertCommit"),
+		}, {
+			ViewName:    "commits",
+			Key:         'c',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCopyCommit,
+			Description: gui.Tr.SLocalize("cherryPickCopy"),
+		}, {
+			ViewName:    "commits",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCopyCommitRange,
+			Description: gui.Tr.SLocalize("cherryPickCopyRange"),
+		}, {
+			ViewName:    "commits",
+			Key:         'v',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.HandlePasteCommits,
+			Description: gui.Tr.SLocalize("pasteCommits"),
+		}, {
+			ViewName:    "commits",
+			Key:         gocui.KeyEnter,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSwitchToCommitFilesPanel,
+			Description: gui.Tr.SLocalize("viewCommitFiles"),
+		}, {
+			ViewName:    "commits",
+			Key:         gocui.KeySpace,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleDiffCommit,
+			Description: gui.Tr.SLocalize("CommitsDiff"),
 		}, {
 			ViewName:    "stash",
 			Key:         gocui.KeySpace,
@@ -419,67 +493,39 @@ func (gui *Gui) GetKeybindings() []*Binding {
 			Modifier: gocui.ModNone,
 			Handler:  gui.handleMenuClose,
 		}, {
-			ViewName:    "staging",
+			ViewName: "information",
+			Key:      gocui.MouseLeft,
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDonate,
+		}, {
+			ViewName:    "commitFiles",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleStagingEscape,
-			Description: gui.Tr.SLocalize("EscapeStaging"),
+			Handler:     gui.handleSwitchToCommitsPanel,
+			Description: gui.Tr.SLocalize("goBack"),
 		}, {
-			ViewName: "staging",
-			Key:      gocui.KeyArrowUp,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingPrevLine,
-		}, {
-			ViewName: "staging",
-			Key:      gocui.KeyArrowDown,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingNextLine,
-		}, {
-			ViewName: "staging",
-			Key:      'k',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingPrevLine,
-		}, {
-			ViewName: "staging",
-			Key:      'j',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingNextLine,
-		}, {
-			ViewName: "staging",
-			Key:      gocui.KeyArrowLeft,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingPrevHunk,
-		}, {
-			ViewName: "staging",
-			Key:      gocui.KeyArrowRight,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingNextHunk,
-		}, {
-			ViewName: "staging",
-			Key:      'h',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingPrevHunk,
-		}, {
-			ViewName: "staging",
-			Key:      'l',
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleStagingNextHunk,
-		}, {
-			ViewName:    "staging",
-			Key:         gocui.KeySpace,
+			ViewName:    "commitFiles",
+			Key:         'c',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleStageLine,
-			Description: gui.Tr.SLocalize("StageLine"),
+			Handler:     gui.handleCheckoutCommitFile,
+			Description: gui.Tr.SLocalize("checkoutCommitFile"),
 		}, {
-			ViewName:    "staging",
-			Key:         'a',
+			ViewName:    "commitFiles",
+			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleStageHunk,
-			Description: gui.Tr.SLocalize("StageHunk"),
+			Handler:     gui.handleDiscardOldFileChange,
+			Description: gui.Tr.SLocalize("discardOldFileChange"),
+		},
+		{
+			ViewName:    "commitFiles",
+			Key:         'o',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleOpenOldCommitFile,
+			Description: gui.Tr.SLocalize("openFile"),
 		},
 	}
 
-	for _, viewName := range []string{"status", "branches", "files", "commits", "stash", "menu"} {
+	for _, viewName := range []string{"status", "branches", "files", "commits", "commitFiles", "stash", "menu"} {
 		bindings = append(bindings, []*Binding{
 			{ViewName: viewName, Key: gocui.KeyTab, Modifier: gocui.ModNone, Handler: gui.nextView},
 			{ViewName: viewName, Key: gocui.KeyArrowLeft, Modifier: gocui.ModNone, Handler: gui.previousView},
@@ -492,33 +538,234 @@ func (gui *Gui) GetKeybindings() []*Binding {
 	listPanelMap := map[string]struct {
 		prevLine func(*gocui.Gui, *gocui.View) error
 		nextLine func(*gocui.Gui, *gocui.View) error
+		focus    func(*gocui.Gui, *gocui.View) error
 	}{
-		"menu":     {prevLine: gui.handleMenuPrevLine, nextLine: gui.handleMenuNextLine},
-		"files":    {prevLine: gui.handleFilesPrevLine, nextLine: gui.handleFilesNextLine},
-		"branches": {prevLine: gui.handleBranchesPrevLine, nextLine: gui.handleBranchesNextLine},
-		"commits":  {prevLine: gui.handleCommitsPrevLine, nextLine: gui.handleCommitsNextLine},
-		"stash":    {prevLine: gui.handleStashPrevLine, nextLine: gui.handleStashNextLine},
+		"menu":        {prevLine: gui.handleMenuPrevLine, nextLine: gui.handleMenuNextLine, focus: gui.handleMenuSelect},
+		"files":       {prevLine: gui.handleFilesPrevLine, nextLine: gui.handleFilesNextLine, focus: gui.handleFilesFocus},
+		"branches":    {prevLine: gui.handleBranchesPrevLine, nextLine: gui.handleBranchesNextLine, focus: gui.handleBranchSelect},
+		"commits":     {prevLine: gui.handleCommitsPrevLine, nextLine: gui.handleCommitsNextLine, focus: gui.handleCommitSelect},
+		"stash":       {prevLine: gui.handleStashPrevLine, nextLine: gui.handleStashNextLine, focus: gui.handleStashEntrySelect},
+		"status":      {focus: gui.handleStatusSelect},
+		"commitFiles": {prevLine: gui.handleCommitFilesPrevLine, nextLine: gui.handleCommitFilesNextLine, focus: gui.handleCommitFileSelect},
 	}
 
 	for viewName, functions := range listPanelMap {
 		bindings = append(bindings, []*Binding{
 			{ViewName: viewName, Key: 'k', Modifier: gocui.ModNone, Handler: functions.prevLine},
 			{ViewName: viewName, Key: gocui.KeyArrowUp, Modifier: gocui.ModNone, Handler: functions.prevLine},
+			{ViewName: viewName, Key: gocui.MouseWheelUp, Modifier: gocui.ModNone, Handler: functions.prevLine},
 			{ViewName: viewName, Key: 'j', Modifier: gocui.ModNone, Handler: functions.nextLine},
 			{ViewName: viewName, Key: gocui.KeyArrowDown, Modifier: gocui.ModNone, Handler: functions.nextLine},
+			{ViewName: viewName, Key: gocui.MouseWheelDown, Modifier: gocui.ModNone, Handler: functions.nextLine},
+			{ViewName: viewName, Key: gocui.MouseLeft, Modifier: gocui.ModNone, Handler: functions.focus},
 		}...)
 	}
 
 	return bindings
 }
 
+// GetCurrentKeybindings gets the list of keybindings given the current context
+func (gui *Gui) GetCurrentKeybindings() []*Binding {
+	bindings := gui.GetInitialKeybindings()
+	viewName := gui.currentViewName()
+	currentContext := gui.State.Contexts[viewName]
+	contextBindings := gui.GetContextMap()[viewName][currentContext]
+
+	return append(bindings, contextBindings...)
+}
+
 func (gui *Gui) keybindings(g *gocui.Gui) error {
-	bindings := gui.GetKeybindings()
+	bindings := gui.GetInitialKeybindings()
 
 	for _, binding := range bindings {
 		if err := g.SetKeybinding(binding.ViewName, binding.Key, binding.Modifier, binding.Handler); err != nil {
 			return err
 		}
 	}
+	if err := gui.setInitialContexts(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (gui *Gui) GetContextMap() map[string]map[string][]*Binding {
+	return map[string]map[string][]*Binding{
+		"main": {
+			"normal": {
+				{
+					ViewName:    "main",
+					Key:         gocui.MouseWheelDown,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.scrollDownMain,
+					Description: gui.Tr.SLocalize("ScrollDown"),
+					Alternative: "fn+up",
+				}, {
+					ViewName:    "main",
+					Key:         gocui.MouseWheelUp,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.scrollUpMain,
+					Description: gui.Tr.SLocalize("ScrollUp"),
+					Alternative: "fn+down",
+				},
+			},
+			"staging": {
+				{
+					ViewName:    "main",
+					Key:         gocui.KeyEsc,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStagingEscape,
+					Description: gui.Tr.SLocalize("EscapeStaging"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowUp,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStagingPrevLine,
+					Description: gui.Tr.SLocalize("PrevLine"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowDown,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStagingNextLine,
+					Description: gui.Tr.SLocalize("NextLine"),
+				}, {
+					ViewName: "main",
+					Key:      'k',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingPrevLine,
+				}, {
+					ViewName: "main",
+					Key:      'j',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingNextLine,
+				}, {
+					ViewName: "main",
+					Key:      gocui.MouseWheelUp,
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingPrevLine,
+				}, {
+					ViewName: "main",
+					Key:      gocui.MouseWheelDown,
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingNextLine,
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowLeft,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStagingPrevHunk,
+					Description: gui.Tr.SLocalize("PrevHunk"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowRight,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStagingNextHunk,
+					Description: gui.Tr.SLocalize("NextHunk"),
+				}, {
+					ViewName: "main",
+					Key:      'h',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingPrevHunk,
+				}, {
+					ViewName: "main",
+					Key:      'l',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleStagingNextHunk,
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeySpace,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStageLine,
+					Description: gui.Tr.SLocalize("StageLine"),
+				}, {
+					ViewName:    "main",
+					Key:         'a',
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleStageHunk,
+					Description: gui.Tr.SLocalize("StageHunk"),
+				},
+			},
+			"merging": {
+				{
+					ViewName:    "main",
+					Key:         gocui.KeyEsc,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleEscapeMerge,
+					Description: gui.Tr.SLocalize("EscapeStaging"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeySpace,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handlePickHunk,
+					Description: gui.Tr.SLocalize("PickHunk"),
+				}, {
+					ViewName:    "main",
+					Key:         'b',
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handlePickBothHunks,
+					Description: gui.Tr.SLocalize("PickBothHunks"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowLeft,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleSelectPrevConflict,
+					Description: gui.Tr.SLocalize("PrevConflict"),
+				}, {
+					ViewName: "main",
+					Key:      gocui.KeyArrowRight,
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectNextConflict,
+
+					Description: gui.Tr.SLocalize("NextConflict"),
+				}, {
+					ViewName: "main",
+					Key:      gocui.KeyArrowUp,
+
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleSelectTop,
+					Description: gui.Tr.SLocalize("SelectTop"),
+				}, {
+					ViewName:    "main",
+					Key:         gocui.KeyArrowDown,
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handleSelectBottom,
+					Description: gui.Tr.SLocalize("SelectBottom"),
+				}, {
+					ViewName: "main",
+					Key:      gocui.MouseWheelUp,
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectTop,
+				}, {
+					ViewName: "main",
+					Key:      gocui.MouseWheelDown,
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectBottom,
+				}, {
+					ViewName: "main",
+					Key:      'h',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectPrevConflict,
+				}, {
+					ViewName: "main",
+					Key:      'l',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectNextConflict,
+				}, {
+					ViewName: "main",
+					Key:      'k',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectTop,
+				}, {
+					ViewName: "main",
+					Key:      'j',
+					Modifier: gocui.ModNone,
+					Handler:  gui.handleSelectBottom,
+				}, {
+					ViewName:    "main",
+					Key:         'z',
+					Modifier:    gocui.ModNone,
+					Handler:     gui.handlePopFileSnapshot,
+					Description: gui.Tr.SLocalize("Undo"),
+				},
+			},
+		},
+	}
 }

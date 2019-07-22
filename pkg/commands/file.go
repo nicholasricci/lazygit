@@ -5,18 +5,20 @@ import "github.com/fatih/color"
 // File : A file from git status
 // duplicating this for now
 type File struct {
-	Name               string
-	HasStagedChanges   bool
-	HasUnstagedChanges bool
-	Tracked            bool
-	Deleted            bool
-	HasMergeConflicts  bool
-	DisplayString      string
-	Type               string // one of 'file', 'directory', and 'other'
+	Name                    string
+	HasStagedChanges        bool
+	HasUnstagedChanges      bool
+	Tracked                 bool
+	Deleted                 bool
+	HasMergeConflicts       bool
+	HasInlineMergeConflicts bool
+	DisplayString           string
+	Type                    string // one of 'file', 'directory', and 'other'
+	ShortStatus             string // e.g. 'AD', ' A', 'M ', '??'
 }
 
 // GetDisplayStrings returns the display string of a file
-func (f *File) GetDisplayStrings() []string {
+func (f *File) GetDisplayStrings(isFocused bool) []string {
 	// potentially inefficient to be instantiating these color
 	// objects with each render
 	red := color.New(color.FgRed)
